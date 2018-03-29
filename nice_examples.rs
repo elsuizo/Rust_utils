@@ -584,3 +584,148 @@ impl SpiderRobot {
         writeln!(file, "{}", message).unwrap();
     }
 }
+
+//-------------------------------------------------------------------------
+//                        Enums
+//-------------------------------------------------------------------------
+// Como en C los enums son de la forma:
+enum Ordering {
+    Less,
+    Equal,
+    Greater
+}
+
+// Esto crea un type Ordering con tres posibles valores, llamados variantes o constructores
+// Este codigo es parte de la libreria estandar, por ello podemos importarlo
+use std::cmp::Ordering;
+
+fn compare(n: i32, m: i32) -> Ordering {
+    if n < m {
+        Ordering::Less
+    }else if n > m {
+        Ordering::Greater
+    } else {
+        Ordering::Equal
+    }
+}
+
+// Para importar un enum y asi no tener que declarar sus constructores usamos self
+enum Pet {
+    Orca,
+    Giraffe,
+    //...
+}
+
+use self::Pet::*;
+
+// Los enums pueden tener metodos asociados a ellos!!! como cualquier type???
+// ejemplo:
+#[derive(Copy, Clone, Debug, PartialEq)]
+enum TimeUnits {
+    Seconds,
+    Minutes,
+    Hours,
+    Days,
+    Months,
+    Years,
+}
+impl TimeUnits {
+    // return the plural noun for this time unit
+    fn plural(self) -> &'static str {
+        match self {
+            TimeUnits::Seconds => "seconds",
+            TimeUnits::Minutes => "minutes",
+            TimeUnits::Hours   => "hours",
+            TimeUnits::Days    => "days",
+            TimeUnits::Months  => "months",
+            TimeUnits::Years   => "years"
+        }
+    }
+    fn singular(self) -> &'static str {
+        self.plural().trim_right_matches('s')
+    }
+}
+
+// Los mas interesantes enums son lso que contienen data, por ejemplo:
+// Algunos programas siempre tienen que mostrar datos y tiempo en tiempos que rondan los
+// milisegundos, pero para la mayoria de las aplicaciones es mas simple tener una aproximacion,
+// como "hace dos meses". Podemos escribirlo con un enum!!!
+/// A timestamp that has been deliberately rounded off, so our program
+/// says "6 months ago" instead of "February 9, 2016, at 9:49 AM"
+#[derive(Copy, Clone, Debug, PartialEq)]
+enum RoughTime {
+    InThePast(TimeUnit, u32),
+    JustNow,
+    InTheFuture(TimeUnits, u32)
+}
+
+// Como vemos dos variantes de este enum toman argumentos, estos se llaman "tuple variants". Como
+// las "tuple structs" estos constructores son funciones que crean nuevas instancias de RoughTime
+
+let four_score_and_seven_years_ago = RoughTime::InThePast(TimeUnits::Years, 4 * 20 + 7);
+
+let three_hours_from_now = RoughTime::InTheFuture(TimeUnits::Hours, 3);
+
+// Tambien podemos combinar enums con estructs:
+enum Shape {
+    Sphere {
+        center: Point3d,
+        radius: f32
+    },
+    Cubois {
+        corner1: Point3d,
+        corner2: Point3d,
+    }
+}
+
+//Piola eh!!!
+let unit_sphere = Shape::Sphere{center: ORIGIN, radius: 1.0};
+
+// Podemos tener estructuras de datos muy que posean mucha informacion con estas variantes, por
+// ejemplo, cuando quermos leer un .json los posibles valores que estan en la norma son los que van
+// directamente al enum:
+//
+enum Json {
+    Null,
+    Boolean(bool),
+    Number(f64),
+    String(String),
+    Array(Vec<Json>),
+    Object(Box<HashMap<String, Json>>)
+}
+
+// viendo el enum ya nos damos cuenta enseguida de que se trata!!!
+//
+// Podemos tener como ya vimos con Option<T> y con Result<T, E> enums genericos o parametricos. Su
+// declaracion son similares a las de las estructuras, con una salvedad que no es tan obvia Rust
+// puede eliminar el tag de un Option cuando el type T es un Box o algun otro smart pointer. Un
+// Option<Box<i32>> es guardado en memoria como una palabra de maquina simple. Por ello estructuras
+// de datos genericos pueden ser construidas en unas pocas lineas de codigo:
+
+// A ordered collection of Ts
+enum BinaryTree<T> {
+    Empty,
+    NonEmpty<Box<TreeNode<T>>> // un puntero al nodo nada mas...
+}
+// A part of a BinaryTree.
+struct TreeNode<T> {
+    element: T,
+    left: BinaryTree<T>,
+    rigth: BinaryTree<T>
+}
+
+/// Traduciendo lo anterior seria: Los valores de un arbol binario pueden vacio o no vacio. Si es
+/// vacio entonces este no contiene dato alguno, si es no vacio entonces tiene un puntero que
+/// apunta a un nodo. Cada nodo a su vez contiene un elemento actual y a su vez dos arboles
+/// binarios mas. Esto significa que un arbol puede tener sub-arboles y asi un arbol no vacio
+/// puede tener cualquier numero de descendientes.
+
+// Construir cualquier nodo para el arbol es muy facil:
+//
+use self::BinaryTree::*;
+let jupyter_tree = NonEmpty(Box::new(TreeNode{
+    element: "Jupyter",
+    left: Empty,
+    rigth: Empty
+}));
+
